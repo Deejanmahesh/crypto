@@ -27,6 +27,8 @@ Built for the **Python Full-Stack** technical task.
 Requires Docker Desktop.
 
 ```bash
+git clone https://github.com/Deejanmahesh/crypto.git
+cd crypto
 docker compose up --build
 ```
 
