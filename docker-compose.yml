@@ -1,0 +1,49 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: crypto_db
+    environment:
+      POSTGRES_USER: crypto
+      POSTGRES_PASSWORD: crypto
+      POSTGRES_DB: crypto
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U crypto"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    container_name: crypto_backend
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://crypto:crypto@db:5432/crypto
+      COINGECKO_BASE_URL: https://api.coingecko.com/api/v3
+      TOP_N_ASSETS: "10"
+      HISTORY_DAYS: "30"
+      INGEST_INTERVAL_MINUTES: "10"
+      INGEST_ON_STARTUP: "true"
+      CORS_ORIGINS: "http://localhost:3000"
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: crypto_frontend
+    depends_on:
+      - backend
+    environment:
+      # Browser-side requests go to the host-exposed backend port.
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:
